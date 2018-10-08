@@ -1,0 +1,40 @@
+name: shikamo
+version: '0.1.0.0'
+category: Compiler
+author: Providence Salumu
+maintainer: Providence.Salumu@smunix.com
+copyright: BSD
+license: BSD3
+github: smunix/shikamo
+extra-source-files:
+- README.md
+library:
+  source-dirs: src
+  exposed-modules:
+  - Data.String.Strip
+  dependencies:
+  - base >=4.7 && <5
+executables:
+  shikamo:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - shikamo
+tests:
+  shikamo-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - shikamo
+    - hspec
+    - QuickCheck
