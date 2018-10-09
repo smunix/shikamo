@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b831faff64c7684528fdb923afc31c5d7b4e93392b9a64adecba46d6fd1151f9
+-- hash: cb514f50861f7f1ba3b5b869095a05bfc0bdc8c2b0e6a68291878d7a0f179956
 
 name:           shikamo
 version:        0.1.0.0
@@ -27,10 +27,13 @@ library
   exposed-modules:
       Data.String.Strip
       Shikamo.Parse.Lexer
+      Shikamo.Parse.Parser
+      Shikamo.Lang.Expr
   other-modules:
       Paths_shikamo
   hs-source-dirs:
       src
+  default-extensions: CPP EmptyDataDeriving GADTs DataKinds DeriveGeneric OverloadedStrings ScopedTypeVariables
   build-depends:
       base
     , hashable
@@ -59,6 +62,7 @@ test-suite shikamo-test
   other-modules:
       Data.String.StripSpec
       Shikamo.Parse.LexerSpec
+      Shikamo.Parse.ParserSpec
       Paths_shikamo
   hs-source-dirs:
       test

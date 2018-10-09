@@ -8,18 +8,7 @@ license: BSD3
 github: smunix/shikamo
 extra-source-files:
 - README.md
-library:
-  source-dirs: src
-  exposed-modules:
-  - Data.String.Strip
-  - Shikamo.Parse.Lexer
-  dependencies:
-  - base
-  - hashable
-  - parsec
-  - repline
-  - text
-  - unordered-containers
+
 executables:
   shikamo:
     main: Main.hs
@@ -36,6 +25,30 @@ executables:
     - GADTs
     - DataKinds
     - DeriveGeneric
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Data.String.Strip
+  - Shikamo.Parse.Lexer
+  - Shikamo.Parse.Parser
+  - Shikamo.Lang.Expr
+  dependencies:
+  - base
+  - hashable
+  - parsec
+  - repline
+  - text
+  - unordered-containers
+  default-extensions:
+  - CPP
+  - EmptyDataDeriving
+  - GADTs
+  - DataKinds
+  - DeriveGeneric
+  - OverloadedStrings
+  - ScopedTypeVariables
+
 tests:
   shikamo-test:
     main: Spec.hs

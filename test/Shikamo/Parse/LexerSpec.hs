@@ -5,57 +5,22 @@ import           Test.Hspec
 import           Test.QuickCheck
 
 import           Shikamo.Parse.Lexer
-
-import qualified Data.Text.Lazy      as Text
 import qualified Text.Parsec         as Parsec
-import qualified Text.Parsec.Expr    as Parsec
-import qualified Text.Parsec.Token   as Parsec
-
-type Str = Text.Text
-type Parser m a    = Parsec.ParsecT Text.Text () m a
-type Op m a        = Parsec.Operator Text.Text () m a
-type Operators m a = Parsec.OperatorTable Text.Text () m a
-
-reservedNames, reservedOps :: [ String ]
-reservedNames = [ "let"
-                , "in"
-                , "if"
-                , "then"
-                , "else"
-                ]
-reservedOps = [ "+"
-              , "*"
-              , "/"
-              , "-"
-              , "->"
-              , "=>"
-              , "="
-              , "\\"
-              , "and"
-              , "or"
-              , "not"
-              ]
-
--- | lexer : Shikamo's language definition
-lexer :: (Monad m) => Parsec.GenTokenParser Str () m
-lexer = Parsec.makeTokenParser langDef
-  where
-    langDef :: (Monad m) => Parsec.GenLanguageDef Str () m
-    langDef = Parsec.LanguageDef { Parsec.commentStart    = "{-"
-                                 , Parsec.commentEnd      = "-}"
-                                 , Parsec.commentLine     = "--"
-                                 , Parsec.nestedComments  = True
-                                 , Parsec.identStart      = Parsec.letter
-                                 , Parsec.identLetter     = Parsec.alphaNum Parsec.<|> Parsec.oneOf "_'"
-                                 , Parsec.opStart         = Parsec.oneOf ":!#$%&*+./<=>?@\\^|-~"
-                                 , Parsec.opLetter        = Parsec.oneOf ":!#$%&*+./<=>?@\\^|-~"
-                                 , Parsec.reservedNames   = reservedNames
-                                 , Parsec.reservedOpNames = reservedOps
-                                 , Parsec.caseSensitive   = True
-                                 }
 
 spec :: Spec
 spec = do
-  describe "lex" $ do
-    it "utils" $ do
-      pending
+  describe "lexer" $ do
+    it "languageDef" $ do
+      Parsec.parse (contents (identifier)) "languageDef" " aVariable " `shouldBe` Right "aVariable"
+      Parsec.parse (contents (semiSep identifier)) "languageDef" " a; b; c " `shouldBe` Right ["a", "b", "c"]
+      Parsec.parse (contents (semiSep identifier)) "languageDef" " a; b; c " `shouldBe` Right ["a", "b", "c"]
+      Parsec.parse (contents (reservedOp "and")) "languageDef" "and" `shouldBe` Right ()
+      Parsec.parse (contents (reservedOp "andP")) "languageDef" "andP" `shouldBe` Right ()
+      Parsec.parse (contents (identifier)) "languageDef" " and " `shouldNotBe` Right "and"
+      Parsec.parse (contents (operator)) "languageDef" " ==> " `shouldBe` Right "==>"
+      Parsec.parse (contents (integer)) "languageDef" " 1234 " `shouldBe` Right 1234
+      Parsec.parse (contents (parens (do
+                                         i1 <- identifier
+                                         o <- operator -- fails on reserved OPs
+                                         i2 <- identifier
+                                         return (i1 ++ o ++ i2)))) "languageDef" " (a+b) " `shouldBe` Right "a+b"
