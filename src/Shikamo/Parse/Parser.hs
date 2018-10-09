@@ -1,7 +1,5 @@
 module Shikamo.Parse.Parser ( appExpr
-                            , arithExpr
-                            , compareExpr
-                            , computationExpr
+                            , termExpr
                             , grammarExpr
                             , lamExpr
                             , varExpr
@@ -15,13 +13,6 @@ import qualified Text.Parsec         as Parsec
 import qualified Text.Parsec.Expr    as Parsec
 import qualified Text.Parsec.Token   as Parsec
 
-{-
-type Str = Text.Text
-type Parser m a    = Parsec.ParsecT Text.Text () m a
-type Op m a        = Parsec.Operator Text.Text () m a
-type Operators m a = Parsec.OperatorTable Text.Text () m a
--}
-
 data Bind where
   Bind :: String -> Expr -> Bind
   deriving (Eq, Show)
@@ -34,6 +25,7 @@ prefixOp str op = Parsec.Prefix (reservedOp str >> return op)
 
 arithOps :: (Monad m) => Operators m Expr
 arithOps = [ [ prefixOp "-" (UnaOp Neg)
+             , prefixOp "not" (UnaOp Not)
              ]
            , [ infixOp "*" (BinOp Mul) Parsec.AssocLeft
              , infixOp "/" (BinOp Div) Parsec.AssocLeft
@@ -41,22 +33,18 @@ arithOps = [ [ prefixOp "-" (UnaOp Neg)
            , [ infixOp "+" (BinOp Add) Parsec.AssocLeft
              , infixOp "-" (BinOp Sub) Parsec.AssocLeft
              ]
+           , [ infixOp ">" (BinOp Gt) Parsec.AssocLeft
+             , infixOp ">=" (BinOp Gte) Parsec.AssocLeft
+             , infixOp "<" (BinOp Lt) Parsec.AssocLeft
+             , infixOp "<=" (BinOp Lte) Parsec.AssocLeft
+             , infixOp "==" (BinOp Eq) Parsec.AssocLeft
+             , infixOp "!=" (BinOp Neq) Parsec.AssocLeft
+             ]
+           , [ infixOp "and" (BinOp And) Parsec.AssocLeft
+             , infixOp "or" (BinOp Or) Parsec.AssocLeft
+             ]
            ]
 
-compareOps :: (Monad m) => Operators m Expr
-compareOps = [ [ prefixOp "not" (UnaOp Not)
-               ]
-             , [ infixOp ">" (BinOp Gt) Parsec.AssocLeft
-               , infixOp ">=" (BinOp Gte) Parsec.AssocLeft
-               , infixOp "<" (BinOp Lt) Parsec.AssocLeft
-               , infixOp "<=" (BinOp Lte) Parsec.AssocLeft
-               , infixOp "==" (BinOp Eq) Parsec.AssocLeft
-               , infixOp "!=" (BinOp Neq) Parsec.AssocLeft
-               ]
-             , [ infixOp "and" (BinOp And) Parsec.AssocLeft
-               , infixOp "or" (BinOp Or) Parsec.AssocLeft
-               ]
-           ]
 -- | variable : a
 varExpr :: (Monad m) => Parser m Expr
 varExpr = do
@@ -77,26 +65,14 @@ lamExpr = do
 --   rewritten as : App (App (App (App e1 e2) e3) .. eN-1) eN
 appExpr :: (Monad m) => Parser m Expr
 appExpr = do
-  -- let
-  --   term = (arithExpr Parsec.<|> compareExpr)
-
-  exprs <- Parsec.many1 grammarExpr
+  exprs <- Parsec.many1 termExpr
   return $ foldl1 App exprs
 
 grammarExpr :: (Monad m) => Parser m Expr
 grammarExpr
-  = parens term
+  = parens appExpr
   Parsec.<|> varExpr
   Parsec.<|> lamExpr
-  Parsec.<|> appExpr
-  where
-    term = arithExpr Parsec.<|> compareExpr
 
-arithExpr :: (Monad m) => Parser m Expr
-arithExpr = Parsec.buildExpressionParser arithOps grammarExpr
-
-compareExpr :: (Monad m) => Parser m Expr
-compareExpr = Parsec.buildExpressionParser compareOps grammarExpr
-
-computationExpr :: (Monad m) => Parser m Expr
-computationExpr = Parsec.buildExpressionParser (arithOps <> compareOps) grammarExpr
+termExpr :: (Monad m) => Parser m Expr
+termExpr = Parsec.buildExpressionParser arithOps grammarExpr
