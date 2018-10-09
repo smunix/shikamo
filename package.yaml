@@ -12,8 +12,14 @@ library:
   source-dirs: src
   exposed-modules:
   - Data.String.Strip
+  - Shikamo.Parse.Lexer
   dependencies:
-  - base >=4.7 && <5
+  - base
+  - hashable
+  - parsec
+  - repline
+  - text
+  - unordered-containers
 executables:
   shikamo:
     main: Main.hs
@@ -25,6 +31,11 @@ executables:
     dependencies:
     - base
     - shikamo
+    default-extensions:
+    - CPP
+    - GADTs
+    - DataKinds
+    - DeriveGeneric
 tests:
   shikamo-test:
     main: Spec.hs
@@ -38,3 +49,15 @@ tests:
     - shikamo
     - hspec
     - QuickCheck
+    - hashable
+    - parsec
+    - repline
+    - text
+    - unordered-containers
+    default-extensions:
+    - CPP
+    - GADTs
+    - DataKinds
+    - DeriveGeneric
+    - OverloadedStrings
+    - ScopedTypeVariables
