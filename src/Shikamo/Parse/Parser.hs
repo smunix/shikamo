@@ -55,7 +55,7 @@ varExpr = do
 --   rewritten as : \x.\y.\z.e
 lamExpr :: (Monad m) => Parser m Expr
 lamExpr = do
-  reserved "\\"
+  reservedOp "\\"
   args <- Parsec.many1 identifier
   reservedOp "."
   body <- appExpr

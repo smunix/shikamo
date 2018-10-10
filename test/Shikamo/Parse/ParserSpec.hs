@@ -42,4 +42,8 @@ spec = do
     it "Lambda abstraction (untyped)" $ do
       Parsec.parse (contents (appExpr)) "parser" "\\ x . x" `shouldBe` Right (Lam "x" (Var "x"))
       Parsec.parse (contents (appExpr)) "parser" "\\ x y . x y" `shouldBe` Right (Lam "x" (Lam "y" (App (Var "x") (Var "y"))))
+      Parsec.parse (contents (appExpr)) "parser" "\\x y . x y" `shouldBe` Right (Lam "x" (Lam "y" (App (Var "x") (Var "y"))))
+      Parsec.parse (contents (appExpr)) "parser" "\\ x y. x y" `shouldBe` Right (Lam "x" (Lam "y" (App (Var "x") (Var "y"))))
+      Parsec.parse (contents (appExpr)) "parser" "\\ x y.x y" `shouldBe` Right (Lam "x" (Lam "y" (App (Var "x") (Var "y"))))
+      Parsec.parse (contents (appExpr)) "parser" "\\x y.x y" `shouldBe` Right (Lam "x" (Lam "y" (App (Var "x") (Var "y"))))
 
