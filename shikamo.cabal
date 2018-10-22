@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cb514f50861f7f1ba3b5b869095a05bfc0bdc8c2b0e6a68291878d7a0f179956
+-- hash: 98acd7f6da45f1f887b61750266c689089ae4c07aec5fc5a4cac2602639458b9
 
 name:           shikamo
 version:        0.1.0.0
@@ -15,7 +17,6 @@ copyright:      BSD
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
     README.md
 
@@ -27,16 +28,19 @@ library
   exposed-modules:
       Data.String.Strip
       Shikamo.Parse.Lexer
-      Shikamo.Parse.Parser
       Shikamo.Lang.Expr
+      Shikamo.Lexer.Lexer
   other-modules:
       Paths_shikamo
   hs-source-dirs:
       src
-  default-extensions: CPP EmptyDataDeriving GADTs DataKinds DeriveGeneric OverloadedStrings ScopedTypeVariables
+  default-extensions: ConstraintKinds CPP DataKinds DeriveFoldable DeriveFunctor DeriveGeneric DeriveDataTypeable DeriveTraversable EmptyDataDeriving FlexibleInstances FlexibleContexts GADTs GeneralizedNewtypeDeriving OverloadedStrings KindSignatures PolyKinds LambdaCase OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeFamilies
   build-depends:
       base
+    , deepseq
+    , exceptions
     , hashable
+    , mtl
     , parsec
     , repline
     , text
@@ -61,12 +65,12 @@ test-suite shikamo-test
   main-is: Spec.hs
   other-modules:
       Data.String.StripSpec
+      Shikamo.Lexer.LexerSpec
       Shikamo.Parse.LexerSpec
-      Shikamo.Parse.ParserSpec
       Paths_shikamo
   hs-source-dirs:
       test
-  default-extensions: CPP GADTs DataKinds DeriveGeneric OverloadedStrings ScopedTypeVariables
+  default-extensions: CPP GADTs DataKinds DeriveGeneric OverloadedStrings ScopedTypeVariables StandaloneDeriving
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       QuickCheck

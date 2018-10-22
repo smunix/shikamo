@@ -31,23 +31,42 @@ library:
   exposed-modules:
   - Data.String.Strip
   - Shikamo.Parse.Lexer
-  - Shikamo.Parse.Parser
   - Shikamo.Lang.Expr
+  - Shikamo.Lexer.Lexer
   dependencies:
   - base
+  - deepseq
+  - exceptions
   - hashable
+  - mtl
   - parsec
   - repline
   - text
   - unordered-containers
   default-extensions:
+  - ConstraintKinds
   - CPP
-  - EmptyDataDeriving
-  - GADTs
   - DataKinds
+  - DeriveFoldable
+  - DeriveFunctor
   - DeriveGeneric
+  - DeriveDataTypeable
+  - DeriveTraversable
+  - EmptyDataDeriving
+  - FlexibleInstances
+  - FlexibleContexts
+  - GADTs
+  - GeneralizedNewtypeDeriving
   - OverloadedStrings
+  - KindSignatures
+  - PolyKinds
+  - LambdaCase
+  - OverloadedStrings
+  - RankNTypes
+  - RecordWildCards
   - ScopedTypeVariables
+  - StandaloneDeriving
+  - TypeFamilies
 
 tests:
   shikamo-test:
@@ -74,3 +93,4 @@ tests:
     - DeriveGeneric
     - OverloadedStrings
     - ScopedTypeVariables
+    - StandaloneDeriving
