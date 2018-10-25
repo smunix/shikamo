@@ -21,12 +21,10 @@ module Shikamo.Lang.Expr ( Alt(..)
                          , ImplTypedBinding(..)
                          , Kind(..)
                          , Lit(..)
-                         , Loc(..)
                          , Pattern(..)
                          , Predicate(..)
                          , Qualified(..)
                          , Scheme(..)
-                         , emptyLoc
                          ) where
 
 import           Control.DeepSeq
@@ -41,25 +39,6 @@ import           Text.Parsec         (ParseError)
 import qualified Text.Parsec         as P
 import qualified Text.Parsec.Error   as P
 import qualified Text.Parsec.Pos     as P
-
--- | A Location annotating 'Lex' elements.
-data Loc where
-  Loc :: { locStart :: !P.SourcePos
-         , locEnd :: !P.SourcePos
-         } -> Loc
-  deriving (Show, Eq, Generic, Data, Typeable)
-
-setFilepath :: Loc -> P.SourceName -> Loc
-setFilepath (Loc s e) fp = Loc {..}
-  where
-    locStart = P.setSourceName s fp
-    locEnd   = P.setSourceName e fp
-
--- | An empty initial location
-emptyLoc = Loc{..}
-  where
-    locStart = P.initialPos "<null>"
-    locEnd   = P.initialPos "<null>"
 
 -- * Expression AST
 

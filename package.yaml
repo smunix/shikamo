@@ -30,9 +30,10 @@ library:
   source-dirs: src
   exposed-modules:
   - Data.String.Strip
-  - Shikamo.Parse.Lexer
+  - Shikamo.Parse.Parser
   - Shikamo.Lang.Expr
   - Shikamo.Lexer.Lexer
+  - Shikamo.Lexer.Loc
   dependencies:
   - base
   - deepseq

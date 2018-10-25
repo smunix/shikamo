@@ -2,8 +2,6 @@ module Shikamo.Lexer.Lexer ( Lex(..)
                            , Lexer(..)
                            , lex
                            , lexemize
-                           , Parser(..)
-                           , parse
                            , Tok(..)
                            , P.Message(..)
                            , emptyLoc
@@ -31,6 +29,7 @@ import qualified Text.Parsec.Text    as P
 import           Text.Printf
 
 import           Shikamo.Lang.Expr
+import           Shikamo.Lexer.Loc
 
 #if 0
 type Str = Text
@@ -289,10 +288,4 @@ lexing tokFn lxer desc = do
                                              quotes (T.unpack word) ++ " : that keyword isn't allowed" ++ ext)
         where
           ext = "but you could use this " ++ quotes (T.unpack word ++ "_") ++ " instead"
-
--- | A Parser generates a stream of 'Decl' from the stream ['Lex'] produced by 'Lexer'
-type Parser a = forall s m . (Monad m, P.Stream s m (Lex Tok)) => P.ParsecT s Int m a
--- | Parse a stream [Lex] into its 'Lex' lexemes
-parse :: (P.Stream s m (Lex Tok)) => Parser a -> P.SourceName -> s -> m (Either P.ParseError a)
-parse p = P.runParserT p 0
 

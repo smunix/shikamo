@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 98acd7f6da45f1f887b61750266c689089ae4c07aec5fc5a4cac2602639458b9
+-- hash: e4ec6f9e2a641aed7da9d1e725f769b7c2237c119ce48a34984301b5f9c79910
 
 name:           shikamo
 version:        0.1.0.0
@@ -27,9 +27,10 @@ source-repository head
 library
   exposed-modules:
       Data.String.Strip
-      Shikamo.Parse.Lexer
+      Shikamo.Parse.Parser
       Shikamo.Lang.Expr
       Shikamo.Lexer.Lexer
+      Shikamo.Lexer.Loc
   other-modules:
       Paths_shikamo
   hs-source-dirs:
@@ -66,7 +67,7 @@ test-suite shikamo-test
   other-modules:
       Data.String.StripSpec
       Shikamo.Lexer.LexerSpec
-      Shikamo.Parse.LexerSpec
+      Shikamo.Parse.ParserSpec
       Paths_shikamo
   hs-source-dirs:
       test

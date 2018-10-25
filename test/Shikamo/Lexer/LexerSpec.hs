@@ -5,6 +5,7 @@ import           Test.QuickCheck
 
 import           Shikamo.Lang.Expr
 import           Shikamo.Lexer.Lexer
+import           Shikamo.Lexer.Loc
 
 import           Text.Parsec.Error   (Message (..))
 import           Text.Parsec.Pos     (newPos)
