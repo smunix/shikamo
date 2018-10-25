@@ -56,12 +56,15 @@ library:
   - EmptyDataDeriving
   - FlexibleInstances
   - FlexibleContexts
+  - FunctionalDependencies
   - GADTs
   - GeneralizedNewtypeDeriving
   - OverloadedStrings
   - KindSignatures
+  - MultiParamTypeClasses
   - PolyKinds
   - LambdaCase
+  - MultiWayIf
   - OverloadedStrings
   - RankNTypes
   - RecordWildCards

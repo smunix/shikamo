@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e4ec6f9e2a641aed7da9d1e725f769b7c2237c119ce48a34984301b5f9c79910
+-- hash: f33e5cba376a88a53a96e2841e3a511efdab64b580168328462122377d9b140b
 
 name:           shikamo
 version:        0.1.0.0
@@ -35,7 +35,7 @@ library
       Paths_shikamo
   hs-source-dirs:
       src
-  default-extensions: ConstraintKinds CPP DataKinds DeriveFoldable DeriveFunctor DeriveGeneric DeriveDataTypeable DeriveTraversable EmptyDataDeriving FlexibleInstances FlexibleContexts GADTs GeneralizedNewtypeDeriving OverloadedStrings KindSignatures PolyKinds LambdaCase OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeFamilies
+  default-extensions: ConstraintKinds CPP DataKinds DeriveFoldable DeriveFunctor DeriveGeneric DeriveDataTypeable DeriveTraversable EmptyDataDeriving FlexibleInstances FlexibleContexts FunctionalDependencies GADTs GeneralizedNewtypeDeriving OverloadedStrings KindSignatures MultiParamTypeClasses PolyKinds LambdaCase MultiWayIf OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeFamilies
   build-depends:
       base
     , deepseq

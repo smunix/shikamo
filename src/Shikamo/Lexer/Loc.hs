@@ -1,4 +1,6 @@
 module Shikamo.Lexer.Loc ( Loc(..)
+                         , Locate(..)
+                         , Located(..)
                          , emptyLoc
                          ) where
 
@@ -25,3 +27,15 @@ emptyLoc = Loc{..}
   where
     locStart = P.initialPos "<null>"
     locEnd   = P.initialPos "<null>"
+
+data Located tok where
+  Located :: { locatedTok :: tok -- ^ get the token
+             , locatedLoc :: Loc -- ^ get the location
+             } -> Located tok
+
+class Locate s a | s -> a where
+  locate :: s -> (Loc, a)
+
+instance Locate (Located t) t where
+  locate (Located{..}) = (locatedLoc, locatedTok)
+

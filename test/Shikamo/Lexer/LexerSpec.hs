@@ -7,6 +7,7 @@ import           Shikamo.Lang.Expr
 import           Shikamo.Lexer.Lexer
 import           Shikamo.Lexer.Loc
 
+import           Data.Text           (Text)
 import           Text.Parsec.Error   (Message (..))
 import           Text.Parsec.Pos     (newPos)
 
@@ -20,24 +21,26 @@ expects = Expect <$> [ "white space"
                      , "'else'"
                      ]
 
+lexemizeT fp s = lexemize fp (s :: Text)
+
 spec :: Spec
 spec = do
   describe "Lexer" $ do
     describe "lexem" $ do
       it "unitTok" $ do
-        l <- lexemize "<file>" "      \n"
+        l <- lexemizeT "<file>" "      \n"
         l `shouldBe` Right ([])
 
       it "FloatTok" $ do
-        l <- lexemize "<file>" " -2.3"
+        l <- lexemizeT "<file>" " -2.3"
         l `shouldBe` Right ([Lex {lexTok = FloatTok {floatTok = -2.3}, lexLoc = Loc {locStart = newPos "<file>" 1 2, locEnd = newPos "<file>" 1 6}}])
 
       it "IntTok" $ do
-        l <- lexemize "<file>" " -2"
+        l <- lexemizeT "<file>" " -2"
         l `shouldBe` Right ([Lex {lexTok = IntTok {intTok = -2}, lexLoc = Loc {locStart = newPos "<file>" 1 2, locEnd = newPos "<file>" 1 4}}])
 
       it "IfThenElseTok" $ do
-        l <- lexemize "<file>" " if True then -2 else 1.03"
+        l <- lexemizeT "<file>" " if True then -2 else 1.03"
         l `shouldBe` Right ([ Lex { lexTok = IfTok, lexLoc = Loc {locStart = newPos "<file>" 1 2, locEnd = newPos "<file>" 1 4}}
                             , Lex { lexTok = CtorTok { ctorTok = "True" }, lexLoc = Loc {locStart = newPos "<file>" 1 5, locEnd = newPos "<file>" 1 9}}
                             , Lex { lexTok = ThenTok, lexLoc = Loc {locStart = newPos "<file>" 1 10, locEnd = newPos "<file>" 1 14}}
@@ -46,7 +49,7 @@ spec = do
                             , Lex { lexTok = FloatTok { floatTok = 1.03 }, lexLoc = Loc {locStart = newPos "<file>" 1 23, locEnd = newPos "<file>" 1 27}}
                             ])
       it "class" $ do
-        l <- lexemize "<file>" "class Klass a b c where\n klassMethod :: a -> b -> c"
+        l <- lexemizeT "<file>" "class Klass a b c where\n klassMethod :: a -> b -> c"
         l `shouldBe` Right ([ Lex {lexTok = ClassTok, lexLoc = Loc {locStart = newPos "<file>" 1 1, locEnd = newPos "<file>" 1 6}}
                             , Lex {lexTok = CtorTok {ctorTok = "Klass"}, lexLoc = Loc {locStart = newPos "<file>" 1 7, locEnd = newPos "<file>" 1 12}}
                             , Lex {lexTok = VarTok {varTok = "a"}, lexLoc = Loc {locStart = newPos "<file>" 1 13, locEnd = newPos "<file>" 1 14}}
@@ -64,7 +67,7 @@ spec = do
 
       describe "instance" $ do
         it "ctor" $ do
-          l <- lexemize "<file>" "instance Klass ByteString Text Char where\n klass = \\ b t -> charFrom(b, t)"
+          l <- lexemizeT "<file>" "instance Klass ByteString Text Char where\n klass = \\ b t -> charFrom(b, t)"
           l `shouldBe` Right ([ Lex {lexTok = InstanceTok, lexLoc = Loc {locStart = newPos "<file>" 1 1, locEnd = newPos "<file>" 1 9}}
                               , Lex {lexTok = CtorTok {ctorTok = "Klass"}, lexLoc = Loc {locStart = newPos "<file>" 1 10, locEnd = newPos "<file>" 1 15}}
                               , Lex {lexTok = CtorTok {ctorTok = "ByteString"}, lexLoc = Loc {locStart = newPos "<file>" 1 16, locEnd = newPos "<file>" 1 26}}
@@ -86,7 +89,7 @@ spec = do
                               ])
 
         it "var" $ do
-          l <- lexemize "<file>" "(Predicate b t c) => instance Klass b t c where\n klass = \\ b t -> charFrom(b, t)"
+          l <- lexemizeT "<file>" "(Predicate b t c) => instance Klass b t c where\n klass = \\ b t -> charFrom(b, t)"
           l `shouldBe` Right ([ Lex {lexTok = OpenParenTok, lexLoc = Loc {locStart = newPos "<file>" 1 1, locEnd = newPos "<file>" 1 2}}
                               , Lex {lexTok = CtorTok {ctorTok = "Predicate"}, lexLoc = Loc {locStart = newPos "<file>" 1 2, locEnd = newPos "<file>" 1 11}}
                               , Lex {lexTok = VarTok {varTok = "b"}, lexLoc = Loc {locStart = newPos "<file>" 1 12, locEnd = newPos "<file>" 1 13}}

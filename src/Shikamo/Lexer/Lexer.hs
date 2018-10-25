@@ -44,6 +44,9 @@ data Lex tok where
          } -> Lex tok
   deriving (Show, Eq)
 
+instance Locate (Lex t) t where
+  locate (Lex{..}) = (lexLoc, lexTok)
+
 -- | A Token data type.
 data Tok where
   UnitTok            :: Tok
@@ -86,9 +89,9 @@ lex :: (P.Stream s m Char) => Lexer a -> P.SourceName -> s -> m (Either P.ParseE
 lex p = P.runParserT p ()
 
 -- | Get the list of all Lexems from the imput text
-lexemize :: (Monad m) =>
+lexemize :: (P.Stream s m Char, Monad m) =>
   FilePath -- ^ @file@ source
-  -> Text -- ^ an @input@ text to parse
+  -> s -- ^ an @input@ text to parse
   -> m (Either P.ParseError [Lex Tok]) -- ^ @result@ as a list of lexem
 lexemize fp t = lex lexems fp t
 

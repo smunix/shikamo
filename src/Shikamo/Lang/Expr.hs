@@ -14,7 +14,9 @@ module Shikamo.Lang.Expr ( Alt(..)
                          , BindGroup(..)
                          , CaseAlt(..)
                          , Class(..)
-                         , DataTypeCtor(..)
+                         , DataType(..)
+                         , DataCtor(..)
+                         , Decl(..)
                          , ExplTypedBinding(..)
                          , Expr(..)
                          , Id(..)
@@ -25,6 +27,7 @@ module Shikamo.Lang.Expr ( Alt(..)
                          , Predicate(..)
                          , Qualified(..)
                          , Scheme(..)
+                         , TypeVar(..)
                          ) where
 
 import           Control.DeepSeq
@@ -32,6 +35,7 @@ import           Control.Monad.Catch
 import           Control.Monad.State
 import           Data.Data           (Data, Typeable)
 import qualified Data.HashMap.Strict as M
+import           Data.Kind           (Type, Constraint)
 import           Data.String
 import           Data.Text           (Text)
 import           GHC.Generics
@@ -54,17 +58,17 @@ data TypeVar i where
   deriving (Show, Eq, Generic, Data, Typeable)
 
 -- | A data type constructor.
-data DataTypeCtor t i where
-  DataTypeCtor :: { dtcName :: i
-                  , dtcFields :: [t i]
-                  } -> DataTypeCtor t i
+data DataCtor t i where
+  DataCtor :: { dtcName :: i
+              , dtcFields :: [t i]
+              } -> DataCtor t i
   deriving (Show, Eq, Generic, Data, Typeable)
 
 -- | A data type.
 data DataType t i where
   DataType :: { dtName :: i
               , dtVars :: [TypeVar i]
-              , dtCtors :: [DataTypeCtor t i]
+              , dtCtors :: [DataCtor t i]
               } -> DataType t i
   deriving (Show, Eq, Generic, Data, Typeable)
 
@@ -185,14 +189,14 @@ data Dictionary t i l where
   deriving (Show, Eq, Generic, Data, Typeable, Functor, Traversable, Foldable)
 
 -- | A Class instance.
-data Instance (t :: * -> *) i l where
+data Instance (t :: Type -> Type) i l where
   Instance :: { instPredicate  :: !(Scheme t i (Predicate t))
               , instDictionary :: !(Dictionary t i l)
               } -> Instance t i l
   deriving (Show, Eq, Generic, Data, Typeable, Functor, Traversable, Foldable)
 
 -- | A class.
-data Class (t :: * -> *) i l where
+data Class (t :: Type -> Type) i l where
   Class :: { classTypeVars     :: ![TypeVar i]
            , classSuperclasses :: ![Predicate t i]
            , classInstances    :: ![Instance t i l]
@@ -202,7 +206,7 @@ data Class (t :: * -> *) i l where
   deriving (Show, Eq, Generic, Data, Typeable, Functor, Traversable, Foldable)
 
 -- | A declaration.
-data Decl t i l where
+data Decl (t :: Type -> Type) (i :: Type) (l :: Type) where
   DataDecl     :: l -> DataType t i -> Decl t i l
   BindDecl     :: l -> Binding t i l -> Decl t i l
   ClassDecl    :: l -> Class t i l -> Decl t i l
