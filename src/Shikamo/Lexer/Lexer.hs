@@ -2,8 +2,6 @@ module Shikamo.Lexer.Lexer ( Lex(..)
                            , Lexer(..)
                            , lex
                            , lexemize
-                           , Parser(..)
-                           , parse
                            , Tok(..)
                            , P.Message(..)
                            , emptyLoc
@@ -31,6 +29,7 @@ import qualified Text.Parsec.Text    as P
 import           Text.Printf
 
 import           Shikamo.Lang.Expr
+import           Shikamo.Lexer.Loc
 
 #if 0
 type Str = Text
@@ -44,6 +43,9 @@ data Lex tok where
          , lexLoc :: Loc -- ^ get the location
          } -> Lex tok
   deriving (Show, Eq)
+
+instance Locate (Lex t) t where
+  locate (Lex{..}) = (lexLoc, lexTok)
 
 -- | A Token data type.
 data Tok where
@@ -87,9 +89,9 @@ lex :: (P.Stream s m Char) => Lexer a -> P.SourceName -> s -> m (Either P.ParseE
 lex p = P.runParserT p ()
 
 -- | Get the list of all Lexems from the imput text
-lexemize :: (Monad m) =>
+lexemize :: (P.Stream s m Char, Monad m) =>
   FilePath -- ^ @file@ source
-  -> Text -- ^ an @input@ text to parse
+  -> s -- ^ an @input@ text to parse
   -> m (Either P.ParseError [Lex Tok]) -- ^ @result@ as a list of lexem
 lexemize fp t = lex lexems fp t
 
@@ -289,10 +291,4 @@ lexing tokFn lxer desc = do
                                              quotes (T.unpack word) ++ " : that keyword isn't allowed" ++ ext)
         where
           ext = "but you could use this " ++ quotes (T.unpack word ++ "_") ++ " instead"
-
--- | A Parser generates a stream of 'Decl' from the stream ['Lex'] produced by 'Lexer'
-type Parser a = forall s m . (Monad m, P.Stream s m (Lex Tok)) => P.ParsecT s Int m a
--- | Parse a stream [Lex] into its 'Lex' lexemes
-parse :: (P.Stream s m (Lex Tok)) => Parser a -> P.SourceName -> s -> m (Either P.ParseError a)
-parse p = P.runParserT p 0
 

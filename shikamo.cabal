@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 98acd7f6da45f1f887b61750266c689089ae4c07aec5fc5a4cac2602639458b9
+-- hash: f33e5cba376a88a53a96e2841e3a511efdab64b580168328462122377d9b140b
 
 name:           shikamo
 version:        0.1.0.0
@@ -27,14 +27,15 @@ source-repository head
 library
   exposed-modules:
       Data.String.Strip
-      Shikamo.Parse.Lexer
+      Shikamo.Parse.Parser
       Shikamo.Lang.Expr
       Shikamo.Lexer.Lexer
+      Shikamo.Lexer.Loc
   other-modules:
       Paths_shikamo
   hs-source-dirs:
       src
-  default-extensions: ConstraintKinds CPP DataKinds DeriveFoldable DeriveFunctor DeriveGeneric DeriveDataTypeable DeriveTraversable EmptyDataDeriving FlexibleInstances FlexibleContexts GADTs GeneralizedNewtypeDeriving OverloadedStrings KindSignatures PolyKinds LambdaCase OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeFamilies
+  default-extensions: ConstraintKinds CPP DataKinds DeriveFoldable DeriveFunctor DeriveGeneric DeriveDataTypeable DeriveTraversable EmptyDataDeriving FlexibleInstances FlexibleContexts FunctionalDependencies GADTs GeneralizedNewtypeDeriving OverloadedStrings KindSignatures MultiParamTypeClasses PolyKinds LambdaCase MultiWayIf OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeFamilies
   build-depends:
       base
     , deepseq
@@ -66,7 +67,7 @@ test-suite shikamo-test
   other-modules:
       Data.String.StripSpec
       Shikamo.Lexer.LexerSpec
-      Shikamo.Parse.LexerSpec
+      Shikamo.Parse.ParserSpec
       Paths_shikamo
   hs-source-dirs:
       test
