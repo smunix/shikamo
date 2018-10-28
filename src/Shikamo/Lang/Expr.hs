@@ -66,6 +66,7 @@ data DataCtor t i where
 
 -- | A data type.
 data DataType t i where
+  DataTypeUnit :: DataType t i
   DataType :: { dtName :: i
               , dtVars :: [TypeVar i]
               , dtCtors :: [DataCtor t i]

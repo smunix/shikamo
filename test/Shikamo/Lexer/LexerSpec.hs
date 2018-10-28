@@ -48,6 +48,55 @@ spec = do
                             , Lex { lexTok = ElseTok, lexLoc = Loc {locStart = newPos "<file>" 1 18, locEnd = newPos "<file>" 1 22}}
                             , Lex { lexTok = FloatTok { floatTok = 1.03 }, lexLoc = Loc {locStart = newPos "<file>" 1 23, locEnd = newPos "<file>" 1 27}}
                             ])
+
+      describe "var fun decl" $ do
+        describe "fun" $ do
+          it "simple" $ do
+            l <- lexemizeT "<file>" "fn = \\x -> x + 1"
+            l `shouldBe` Right [ Lex {lexTok = VarTok {varTok = "fn"}, lexLoc = Loc {locStart = newPos "<file>" 1 1, locEnd = newPos "<file>" 1 3}}
+                               , Lex {lexTok = EqualsTok, lexLoc = Loc {locStart = newPos "<file>" 1 4, locEnd = newPos "<file>" 1 5}}
+                               , Lex {lexTok = BackslashTok, lexLoc = Loc {locStart = newPos "<file>" 1 6, locEnd = newPos "<file>" 1 7}}
+                               , Lex {lexTok = VarTok {varTok = "x"}, lexLoc = Loc {locStart = newPos "<file>" 1 7, locEnd = newPos "<file>" 1 8}}
+                               , Lex {lexTok = RightArrowTok, lexLoc = Loc {locStart = newPos "<file>" 1 9, locEnd = newPos "<file>" 1 11}}
+                               , Lex {lexTok = VarTok {varTok = "x"}, lexLoc = Loc {locStart = newPos "<file>" 1 12, locEnd = newPos "<file>" 1 13}}
+                               , Lex {lexTok = OpTok {opTok = "+"}, lexLoc = Loc {locStart = newPos "<file>" 1 14, locEnd = newPos "<file>" 1 15}}
+                               , Lex {lexTok = IntTok {intTok = 1}, lexLoc = Loc {locStart = newPos "<file>" 1 16, locEnd = newPos "<file>" 1 17}}
+                               ]
+
+          it "explicit" $ do
+            pendingWith "yet to be implemented"
+        describe "var" $ do
+          it "simple" $ do
+            pendingWith "yet to be implemented"
+          it "explicit" $ do
+            pendingWith "yet to be implemented"
+
+      describe "data type decl" $ do
+        describe "unkinded" $ do
+          it "simple" $ do
+            pendingWith "yet to be implemented"
+          it "complex" $ do
+            pendingWith "yet to be implemented"
+        describe "kinded" $ do
+          it "simple" $ do
+            l <- lexemizeT "<file>" "data Maybe (a :: Type) = Just a | Nothing"
+            l `shouldBe` Right ([ Lex {lexTok = DataTok, lexLoc = Loc {locStart = newPos "<file>" 1 1, locEnd = newPos "<file>" 1 5}}
+                                , Lex {lexTok = CtorTok {ctorTok = "Maybe"}, lexLoc = Loc {locStart = newPos "<file>" 1 6, locEnd = newPos "<file>" 1 11}}
+                                , Lex {lexTok = OpenParenTok, lexLoc = Loc {locStart = newPos "<file>" 1 12, locEnd = newPos "<file>" 1 13}}
+                                , Lex {lexTok = VarTok {varTok = "a"}, lexLoc = Loc {locStart = newPos "<file>" 1 13, locEnd = newPos "<file>" 1 14}}
+                                , Lex {lexTok = ColonsTok, lexLoc = Loc {locStart = newPos "<file>" 1 15, locEnd = newPos "<file>" 1 17}}
+                                , Lex {lexTok = CtorTok {ctorTok = "Type"}, lexLoc = Loc {locStart = newPos "<file>" 1 18, locEnd = newPos "<file>" 1 22}}
+                                , Lex {lexTok = CloseParenTok, lexLoc = Loc {locStart = newPos "<file>" 1 22, locEnd = newPos "<file>" 1 23}}
+                                , Lex {lexTok = EqualsTok, lexLoc = Loc {locStart = newPos "<file>" 1 24, locEnd = newPos "<file>" 1 25}}
+                                , Lex {lexTok = CtorTok {ctorTok = "Just"}, lexLoc = Loc {locStart = newPos "<file>" 1 26, locEnd = newPos "<file>" 1 30}}
+                                , Lex {lexTok = VarTok {varTok = "a"}, lexLoc = Loc {locStart = newPos "<file>" 1 31, locEnd = newPos "<file>" 1 32}}
+                                , Lex {lexTok = BarTok, lexLoc = Loc {locStart = newPos "<file>" 1 33, locEnd = newPos "<file>" 1 34}}
+                                , Lex {lexTok = CtorTok {ctorTok = "Nothing"}, lexLoc = Loc {locStart = newPos "<file>" 1 35, locEnd = newPos "<file>" 1 42}}
+                                ])
+
+          it "complex" $ do
+            pendingWith "yet to be implemented"
+
       it "class" $ do
         l <- lexemizeT "<file>" "class Klass a b c where\n klassMethod :: a -> b -> c"
         l `shouldBe` Right ([ Lex {lexTok = ClassTok, lexLoc = Loc {locStart = newPos "<file>" 1 1, locEnd = newPos "<file>" 1 6}}

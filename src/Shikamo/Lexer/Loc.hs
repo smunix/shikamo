@@ -32,6 +32,7 @@ data Located tok where
   Located :: { locatedTok :: tok -- ^ get the token
              , locatedLoc :: Loc -- ^ get the location
              } -> Located tok
+  deriving (Show, Eq)
 
 class Locate s a | s -> a where
   locate :: s -> (Loc, a)
