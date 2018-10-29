@@ -1,5 +1,5 @@
 module Shikamo.Parse.Parser ( Parser(..)
-                            , UnkindedTp(..)
+                            , TyUnkind(..)
                             , parse
                             , parseTest
                             , dataDecl
@@ -12,7 +12,7 @@ import           Control.Monad.State
 import           Data.Data           (Data, Typeable)
 import qualified Data.HashMap.Strict as M
 import           Data.Kind           (Constraint)
-import           Data.List           (foldl')
+import           Data.List           (foldl', nub)
 import           Data.Monoid
 import           Data.String
 import           Data.Text           (Text)
@@ -25,7 +25,7 @@ import qualified Text.Parsec.Pos     as P
 import qualified Text.Parsec.Text    as P
 import           Text.Printf
 
-import           Shikamo.Lang.Expr
+import           Shikamo.Lang.Expr   as E
 import           Shikamo.Lexer.Lexer
 import           Shikamo.Lexer.Loc
 
@@ -62,10 +62,10 @@ parseWith p fp inp = do
         Left e -> throwM (ParserErr e)
         Right a -> return a
 
-data UnkindedTp a where
-  UnkindedTpCtor :: a           -> UnkindedTp a
-  UnkindedTpVar  :: a            -> UnkindedTp a
-  UnkindedTpApp  :: UnkindedTp a -> UnkindedTp a -> UnkindedTp a
+data TyUnkind a where
+  TyUnkindCtor :: a           -> TyUnkind a
+  TyUnkindVar  :: a            -> TyUnkind a
+  TyUnkindApp  :: TyUnkind a -> TyUnkind a -> TyUnkind a
   deriving (Eq, Show, Generic, Data, Typeable)
 
 parensParse :: Parser a -> Parser a
@@ -81,10 +81,13 @@ isTok :: Tok -> Parser (Located Tok)
 isTok tok = satisfyParse (== tok)
 
 varParser :: (i ~ Id) => Parser i
-varParser = (do
-                consumeWithParse (\case
-                                     (Lex (VarTok txt) _) -> Just (Id $ T.unpack txt)
-                                     _ -> Nothing)
+varParser = locatedTok <$> varLocParser
+
+varLocParser :: (i ~ Id) => Parser (Located i)
+varLocParser = (do
+                   consumeWithParse (\case
+                                        (Lex (VarTok txt) loc) -> Just $ Located (Id $ T.unpack txt) loc
+                                        _ -> Nothing)
             ) <?> "type variable (e.g. 'a', 's', etc.)"
 
 ctorParser :: (i ~ Id) => Parser i
@@ -97,11 +100,11 @@ ctorLocParser = consumeWithParse (\case
                                    )
         <?> "value constructor (e.g. Just, Nothing)"
 
-parseAST :: Parser [Decl UnkindedTp Id Loc]
+parseAST :: Parser [Decl TyUnkind Id Loc]
 parseAST = parseModule <* endOfParse
 
 -- | data Data = Ctor ...
-dataDecl :: (t ~ UnkindedTp, i ~ Id) => Parser (Located (DataType t i))
+dataDecl :: (t ~ TyUnkind, i ~ Id) => Parser (Located (DataType t i))
 dataDecl = go <?> "data declaration (e.g. data Maybe a = Just a | Nothing)"
   where
     go = do
@@ -116,50 +119,12 @@ dataDecl = go <?> "data declaration (e.g. data Maybe a = Just a | Nothing)"
       (return () <* satisfyParse (== NonIndentedNewline)) <|> endOfParse
 
       let
-        locatedTok :: (i ~ Id, t ~ UnkindedTp) => DataType t i
+        locatedTok :: (i ~ Id, t ~ TyUnkind) => DataType t i
         locatedTok = DataType{..}
 
       return Located{..}
         where
-          kindableTpVars :: (i ~ Id) => Parser (Located (TypeVar i))
-          kindableTpVars = (unkinded <|> kinded) <?> "type variable (e.g. 'a', 'b', etc.)"
-            where
-              kinded :: (i ~ Id) => Parser (Located (TypeVar i))
-              kinded = parensParse (do
-                                       (Located (TypeVar tvId _) locatedLoc) <- unkinded
-                                       isTok (ColonsTok)
-                                       (Located tvKind _) <- kindParser
-                                       let
-                                         locatedTok = TypeVar{..}
-                                       return Located{..}
-                                   )
-                where
-                  kindParser :: Parser (Located Kind)
-                  kindParser = go
-                    where
-                      go = do
-                        kns <- P.sepBy1 (do
-                                            consumeWithParse (\case
-                                                                 (Lex (CtorTok "Type") loc) -> Just (Located StarKind loc)
-                                                                 _ -> Nothing
-                                                                 ) <?> "`Type` kind") (isTok RightArrowTok)
-
-                        let
-                          (Located _ loc) = head $ kns
-                        return $ foldr1 (\(Located knl locl) (Located knr locr) -> Located (knl `FunKind` knr) locl) kns
-
-              unkinded :: (i ~ Id) => Parser (Located (TypeVar i))
-              unkinded = (do
-                             (Located tvId locatedLoc) <- consumeWithParse (\case
-                                                          (Lex (VarTok txt) loc) -> Just (Located (Id $ T.unpack txt) loc)
-                                                          _ -> Nothing) <?> "variable name (e.g. 'a', 'b', etc.)"
-                             let
-                               tvKind = StarKind
-                               locatedTok = TypeVar{..}
-                             return Located{..}
-                         )
-
-          dataCtorP :: (i ~ Id, t ~ UnkindedTp) => Parser (Located (DataCtor t i))
+          dataCtorP :: (i ~ Id, t ~ TyUnkind) => Parser (Located (DataCtor t i))
           dataCtorP = do
             (Located dtcName locatedLoc) <- ctorLocParser
             dtcFields <- P.many ctorSlot
@@ -167,69 +132,69 @@ dataDecl = go <?> "data declaration (e.g. data Maybe a = Just a | Nothing)"
               locatedTok = DataCtor{..}
             return Located {..}
               where
-                ctorSlot ::  (i ~ Id, t ~ UnkindedTp) => Parser (t i)
-                ctorSlot = (UnkindedTpCtor <$> ctorParser) <|> (UnkindedTpVar <$> varParser) <|> parensParse typeParser
+                ctorSlot ::  (i ~ Id, t ~ TyUnkind) => Parser (t i)
+                ctorSlot = (TyUnkindCtor <$> ctorParser) <|> (TyUnkindVar <$> varParser) <|> parensParse tyUnkindParse
 
-data TypeParsed i where
-  TpCtorP  :: i                        -> TypeParsed i
-  TpVarP   :: i                        -> TypeParsed i
-  TpAppP   :: TypeParsed i             -> TypeParsed i -> TypeParsed i
-  TpQualP  :: [Predicate TypeParsed i] -> TypeParsed i -> TypeParsed i
-  TpTupleP :: [TypeParsed i]          -> TypeParsed i
+data TyParsed i where
+  TyParsedCtor  :: i                      -> TyParsed i
+  TyParsedVar   :: i                      -> TyParsed i
+  TyParsedApp   :: TyParsed i             -> TyParsed i -> TyParsed i
+  TyParsedQual  :: [Predicate TyParsed i] -> TyParsed i -> TyParsed i
+  TyParsedTuple :: [TyParsed i]           -> TyParsed i
 
-typeParsed :: (i ~ Id, t ~ TypeParsed) => Parser (t i)
-typeParsed = infix' <|> app <|> unambiguous
+tyParsed :: (i ~ Id, t ~ TyParsed) => Parser (t i)
+tyParsed = infix' <|> app <|> unambiguous
   where
-    infix' :: (i ~ Id, t ~ TypeParsed) => Parser (t i)
+    infix' :: (i ~ Id, t ~ TyParsed) => Parser (t i)
     infix' = do
       lhs <- (app <|> unambiguous) <?> "lhs of function arrow. e.g. lhs -> b, where lhs := (C1 i11 i12, C2 i21 i22) => a | a ->"
       arrTok <- (fmap Just opFunArr) <|> (fmap Just opConstraintArr) <|> return Nothing
       case arrTok of
         Just (Located (RightArrowTok) _) -> do
-          rhs <- typeParsed <?> "rhs of function arrow. e.g. rhs, where rhs := a | -> (a -> (b -> c))"
-          return $ TpAppP (TpAppP (TpCtorP (Id "(->)"))  lhs) (rhs)
+          rhs <- tyParsed <?> "rhs of function arrow. e.g. rhs, where rhs := a | -> (a -> (b -> c))"
+          return $ TyParsedApp (TyParsedApp (TyParsedCtor (Id "(->)"))  lhs) (rhs)
 
         Just (Located (ImplyTok) _) -> do
-          lhs' <- tpParsedToPredicates lhs <?> "constraints e.g. Show a or (Read a, Show a)"
-          rhs <- typeParsed <?> "rhs of constraints"
-          return $ TpQualP lhs' rhs
+          lhs' <- tyParsedToPredicates lhs <?> "constraints e.g. Show a or (Read a, Show a)"
+          rhs <- tyParsed <?> "rhs of constraints"
+          return $ TyParsedQual lhs' rhs
 
         _ -> return lhs
 
-    tpParsedToPredicates :: (i ~ Id, t ~ TypeParsed) => t i -> Parser [Predicate t i]
-    tpParsedToPredicates = \case
-      TpTupleP xs -> mapM toPredicate xs
+    tyParsedToPredicates :: (i ~ Id, t ~ TyParsed) => t i -> Parser [Predicate t i]
+    tyParsedToPredicates = \case
+      TyParsedTuple xs -> mapM toPredicate xs
       x -> fmap return (toPredicate x)
 
-    toPredicate :: (i ~ Id, t ~ TypeParsed) => t i -> Parser (Predicate t i)
+    toPredicate :: (i ~ Id, t ~ TyParsed) => t i -> Parser (Predicate t i)
     toPredicate t = case targs t of
-      (TpCtorP i, vars@(_:_)) -> return (IsIn i vars)
+      (TyParsedCtor i, vars@(_:_)) -> return (IsIn i vars)
       _ -> P.unexpected "non-class constraint"
 
-    targs ::  (i ~ Id, t ~ TypeParsed) => t i -> (t i, [t i])
+    targs ::  (i ~ Id, t ~ TyParsed) => t i -> (t i, [t i])
     targs t = go t []
       where
-        go (TpAppP f x) args = go f (x:args)
+        go (TyParsedApp f x) args = go f (x:args)
         go f args = (f, args)
 
-    app :: (i ~ Id, t ~ TypeParsed) => Parser (t i)
+    app :: (i ~ Id, t ~ TyParsed) => Parser (t i)
     app = do
       fn <- unambiguous
       args <- P.many unambiguous
-      return $ foldl' TpAppP fn args
+      return $ foldl' TyParsedApp fn args
 
-    unambiguous :: (i ~ Id, t ~ TypeParsed) => Parser (t i)
+    unambiguous :: (i ~ Id, t ~ TyParsed) => Parser (t i)
     unambiguous = atomicType <|> parensTy (do
-                                              xs <- P.sepBy1 typeParsed (isTok CommaTok)
+                                              xs <- P.sepBy1 tyParsed (isTok CommaTok)
                                               case xs of
                                                 [x] -> return x
-                                                _ -> return $ TpTupleP xs
+                                                _ -> return $ TyParsedTuple xs
                                           )
 
-    atomicType :: (i ~ Id, t ~ TypeParsed) => Parser (t i)
-    atomicType = (TpVarP <$> varParser) <|> (TpCtorP <$> ctorParser)
+    atomicType :: (i ~ Id, t ~ TyParsed) => Parser (t i)
+    atomicType = (TyParsedVar <$> varParser) <|> (TyParsedCtor <$> ctorParser)
 
-    parensTy :: (i ~ Id, t ~ TypeParsed) => Parser (t i) -> Parser (t i)
+    parensTy :: (i ~ Id, t ~ TyParsed) => Parser (t i) -> Parser (t i)
     parensTy p = go <?> "parentheses e.g. (T a)"
       where
         go = do
@@ -244,21 +209,129 @@ typeParsed = infix' <|> app <|> unambiguous
     opConstraintArr :: Parser (Located Tok)
     opConstraintArr = isTok ImplyTok
 
-typeParser :: (i ~ Id, t ~ UnkindedTp) => Parser (t i)
-typeParser = typeParsed >>= toUnkinded
+tyUnkindParse :: (i ~ Id, t ~ TyUnkind) => Parser (t i)
+tyUnkindParse = tyParsed >>= toTyUnkind
+
+toTyUnkind :: (i ~ Id, tp ~ TyParsed, un ~ TyUnkind) => tp i -> Parser (un i)
+toTyUnkind tpx =
+  case tpx of
+    TyParsedCtor i -> return  $ TyUnkindCtor i
+    TyParsedVar i -> return $ TyUnkindVar i
+    TyParsedApp f x -> TyUnkindApp <$> (toTyUnkind f) <*> (toTyUnkind x)
+    TyParsedQual {} -> P.unexpected "qualification contexted"
+    TyParsedTuple {} -> P.unexpected "tuple"
+
+varFnDeclExpl :: Parser (Decl TyUnkind Id Loc)
+varFnDeclExpl = go <?> "explicitly typed variable declaration (e.g. e :: Int and x = 1)"
   where
-    toUnkinded :: (i ~ Id, tp ~ TypeParsed, un ~ UnkindedTp) => tp i -> Parser (un i)
-    toUnkinded tpx =
-      case tpx of
-        TpCtorP i -> return  $ UnkindedTpCtor i
-        TpVarP i -> return $ UnkindedTpVar i
-        TpAppP l r -> UnkindedTpApp <$> (toUnkinded l) <*> (toUnkinded r)
-        TpQualP {} -> P.unexpected "qualification contexted"
-        TpTupleP {} -> P.unexpected "tuple"
+    go = do
+      (Located v etbLabel) <- varLocParser <?> "variable name"
+      (Lex tok _) <- anyParse <?> quotes "::" ++ " or " ++ quotes "="
+      case tok of
+        ColonsTok -> do
+          etbScheme <-schemeParse <?> "type signature e.g. foo :: Int"
+          _ <- (return () <* isTok NonIndentedNewline) <|> endOfParse
+          (Located v' loc') <- varLocParser <?> "variable name"
+          when (v /= v') (P.unexpected "variable binding name different to the type signature")
+          _ <- isTok EqualsTok <?> quotes "=" ++  "for variable declariation e.g. x = 1"
+          e <- exprParse
+          _ <- (return () <* isTok NonIndentedNewline) <|> endOfParse
+          let
+            etbId = (v, etbLabel)
+            etbAlts = [makeAlt etbLabel e]
+          return $ BindDecl etbLabel (ExplBinding (ExplTypedBinding{..}))
+        EqualsTok -> do
+          e <- exprParse
+          _ <- (return () <* isTok NonIndentedNewline) <|> endOfParse
+          let
+            itbLabel = etbLabel
+            itbId    = (v, itbLabel)
+            itbAlts  = [makeAlt itbLabel e]
+          return $ BindDecl itbLabel (ImplBinding (ImplTypedBinding{..}))
+        t -> P.unexpected $ quotes (show t)
 
-varFnDeclExpl = undefined
+kindableTpVars :: (i ~ Id) => Parser (Located (TypeVar i))
+kindableTpVars = (unkinded <|> kinded) <?> "type variable (e.g. 'a', 'b', etc.)"
+  where
+    kinded :: (i ~ Id) => Parser (Located (TypeVar i))
+    kinded = parensParse (do
+                             (Located (TypeVar tvId _) locatedLoc) <- unkinded
+                             isTok (ColonsTok)
+                             (Located tvKind _) <- kindParser
+                             let
+                               locatedTok = TypeVar{..}
+                             return Located{..}
+                         )
+      where
+        kindParser :: Parser (Located Kind)
+        kindParser = go
+          where
+            go = do
+              kns <- P.sepBy1 (do
+                                  consumeWithParse (\case
+                                                       (Lex (CtorTok "Type") loc) -> Just (Located StarKind loc)
+                                                       _ -> Nothing
+                                                       ) <?> "`Type` kind") (isTok RightArrowTok)
 
-parseModule :: Parser  [Decl UnkindedTp Id Loc]
+              let
+                (Located _ loc) = head $ kns
+              return $ foldr1 (\(Located knl locl) (Located knr locr) -> Located (knl `FunKind` knr) locl) kns
+
+    unkinded :: (i ~ Id) => Parser (Located (TypeVar i))
+    unkinded = (do
+                   (Located tvId locatedLoc) <- consumeWithParse (\case
+                                                (Lex (VarTok txt) loc) -> Just (Located (Id $ T.unpack txt) loc)
+                                                _ -> Nothing) <?> "variable name (e.g. 'a', 'b', etc.)"
+                   let
+                     tvKind = StarKind
+                     locatedTok = TypeVar{..}
+                   return Located{..}
+               )
+
+schemeParse :: Parser (Scheme TyUnkind Id TyUnkind)
+schemeParse = do
+  expl <- (const True) <$> (P.lookAhead (isTok ForallTok)) <|> return False
+  if expl
+    then  quantified
+    else do
+    ty@(Qualified _ qualType) <- qualifiedParse
+    return $ Forall (collectTyVars qualType) ty
+    where
+      quantified = do
+        isTok ForallTok
+        vars <- P.many1 (locatedTok <$> kindableTpVars) <?> "type variables"
+        isTok PeriodTok
+        ty <- qualifiedParse
+        return $ Forall vars ty
+
+      qualifiedParse :: (t ~ TyUnkind, i ~ Id) => Parser (Qualified t i (t i))
+      qualifiedParse = do
+        tyP <- tyParsed
+        (case tyP of
+           TyParsedQual preds ty -> Qualified <$> (mapM toTyUnkindPred preds) <*> (toTyUnkind ty)
+             where
+               toTyUnkindPred (IsIn c ts) = IsIn c <$> (mapM toTyUnkind ts)
+           _ -> do
+             Qualified [] <$> toTyUnkind tyP
+          )
+
+collectTyVars :: (t ~ TyUnkind, i ~ Id) => t i -> [TypeVar i]
+collectTyVars = \case
+  TyUnkindCtor {} -> []
+  TyUnkindVar  tvId -> let tvKind = StarKind in [TypeVar{..}]
+  TyUnkindApp  f x -> nub (collectTyVars f ++ collectTyVars x)
+
+exprParse :: (t ~ TyUnkind, i ~ Id, l ~ Loc) => Parser (Expr t i l)
+exprParse = undefined
+
+makeAlt :: l -> Expr t i l -> E.Alt t i l
+makeAlt altLabel altExprs = case altExprs of
+  LambExpr _ alt -> alt
+  _ -> E.Alt {..}
+    where
+      altPatterns = []
+
+parseModule :: Parser  [Decl TyUnkind Id Loc]
 parseModule = P.many ( varFnDeclExpl <|> (uncurry DataDecl . locate) <$> dataDecl)
 
 satisfyParse :: (Tok -> Bool) -> Parser (Located Tok)

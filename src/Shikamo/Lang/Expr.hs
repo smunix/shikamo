@@ -11,6 +11,7 @@ This module describes the hierarchy of the all supported @expressions@
 as used by Shikamo. The end result of parsing should be a list of 'Decl'.
 -}
 module Shikamo.Lang.Expr ( Alt(..)
+                         , Binding(..)
                          , BindGroup(..)
                          , CaseAlt(..)
                          , Class(..)
@@ -152,7 +153,7 @@ data Expr t i l where
 data Alt t i l where
   Alt :: { altLabel :: l
          , altPatterns :: ![Pattern t i l]
-         , altExprs :: ![Expr t i l]
+         , altExprs :: !(Expr t i l)
          } -> Alt t i l
   deriving (Show, Generic, Data, Typeable, Functor, Foldable, Traversable, Eq)
 
