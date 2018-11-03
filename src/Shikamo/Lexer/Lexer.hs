@@ -5,6 +5,7 @@ module Shikamo.Lexer.Lexer ( Lex(..)
                            , Tok(..)
                            , P.Message(..)
                            , emptyLoc
+                           , quotes
                            ) where
 
 import Prelude hiding (lex)
@@ -99,7 +100,7 @@ lexems :: Lexer [Lex Tok]
 lexems = P.manyTill (P.many P.space >>= lexem) (P.try (P.spaces >> P.eof))
 
 quotes :: String -> String
-quotes t = "'" <> t <> "'"
+quotes t = "`" <> t <> "`"
 
 ellipsis :: Int -> String -> String
 ellipsis n str =
